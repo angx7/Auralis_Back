@@ -1,4 +1,5 @@
-import express, { Application, Request, Response } from 'express';
+import express from 'express';
+import type { Application, Request, Response } from 'express';
 
 // Definimos el puerto. Usamos variables de entorno o un valor por defecto.
 const PORT: number = parseInt(process.env.PORT || '3000');

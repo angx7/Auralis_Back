@@ -1,44 +1,24 @@
 {
-  // Visit https://aka.ms/tsconfig to read more about this file
   "compilerOptions": {
-    // File Layout
-    // "rootDir": "./src",
-    // "outDir": "./dist",
-
-    // Environment Settings
-    // See also https://aka.ms/tsconfig/module
-    "module": "nodenext",
-    "target": "esnext",
-    "types": [],
-    // For nodejs:
-    // "lib": ["esnext"],
-    // "types": ["node"],
-    // and npm install -D @types/node
-
-    // Other Outputs
-    "sourceMap": true,
-    "declaration": true,
-    "declarationMap": true,
-
-    // Stricter Typechecking Options
-    "noUncheckedIndexedAccess": true,
-    "exactOptionalPropertyTypes": true,
-
-    // Style Options
-    // "noImplicitReturns": true,
-    // "noImplicitOverride": true,
-    // "noUnusedLocals": true,
-    // "noUnusedParameters": true,
-    // "noFallthroughCasesInSwitch": true,
-    // "noPropertyAccessFromIndexSignature": true,
-
-    // Recommended Options
-    "strict": true,
-    "jsx": "react-jsx",
-    "verbatimModuleSyntax": true,
-    "isolatedModules": true,
-    "noUncheckedSideEffectImports": true,
-    "moduleDetection": "force",
-    "skipLibCheck": true,
-  }
+    /* --- Opciones Esenciales del Módulo --- */
+    "target": "ES2022", // JavaScript moderno
+    "module": "NodeNext", // El sistema de módulos para Node.js
+    "moduleResolution": "NodeNext", // Cómo resuelve los módulos
+    "esModuleInterop": true, // Compatibilidad con módulos CommonJS
+    /* --- Opciones de Compilación (Aquí estaba el error) --- */
+    "outDir": "./dist", // La carpeta de salida
+    "rootDir": "./src", // La carpeta de entrada
+    // "noEmit": true,                // ASEGÚRATE DE QUE ESTA LÍNEA ESTÉ BORRADA O EN FALSE
+    /* --- Opciones de Calidad de Código --- */
+    "strict": true, // Habilita todas las comprobaciones estrictas
+    "verbatimModuleSyntax": true, // Fuerza a usar 'import type' (lo que ya arreglamos)
+    "skipLibCheck": true, // Omite la comprobación de tipos en archivos .d.ts
+    "forceConsistentCasingInFileNames": true
+  },
+  "include": [
+    "src/**/*"
+  ], // Qué carpetas debe compilar
+  "exclude": [
+    "node_modules"
+  ] // Qué carpetas debe ignorar
 }
