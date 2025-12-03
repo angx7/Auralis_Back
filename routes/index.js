@@ -4,8 +4,9 @@ import authRoutes from "./auth.js";
 
 const router = Router();
 
+// Endpoint de prueba
 router.get("/", (req, res) => {
-  res.json({ ok: true, message: "API funcionando" });
+  res.json({ ok: true, message: "API funcionando correctamente" });
 });
 
 // Rutas de autenticación
