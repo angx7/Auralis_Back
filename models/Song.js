@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 const RecursosSchema = new mongoose.Schema(
   {
     musicXMLUrl: { type: String, required: true },
+    imagenUrl: { type: String, required: false, trim: true }, // URL de la imagen de la canción
   },
   { _id: false }
 );

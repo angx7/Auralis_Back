@@ -16,5 +16,6 @@ router.get("/", (req, res) => {
 // Rutas de autenticación
 router.use("/auth", authRoutes);
 router.use("/ai", aiRoutes);
+router.use("/seed", (await import("./seed.js")).default);
 
 export default router;

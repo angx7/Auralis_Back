@@ -3,18 +3,21 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 
+// =======================================
+// REGISTRO
+// =======================================
 export const registerUser = async (req, res) => {
   try {
     const { username, email, password } = req.body;
 
-    // Verificar campos
+    // Validar campos
     if (!username || !email || !password) {
       return res
         .status(400)
         .json({ ok: false, message: "Todos los campos son obligatorios" });
     }
 
-    // Usuario existente
+    // Verificar si existe
     const userExists = await User.findOne({ email });
     if (userExists) {
       return res
@@ -33,12 +36,23 @@ export const registerUser = async (req, res) => {
       password_hash,
     });
 
-    return res.json({ ok: true, message: "Usuario creado", user: newUser });
+    return res.json({
+      ok: true,
+      message: "Usuario creado exitosamente",
+      user: {
+        id: newUser._id,
+        username: newUser.username,
+        email: newUser.email,
+      },
+    });
   } catch (error) {
-    res.status(500).json({ ok: false, error: error.message });
+    return res.status(500).json({ ok: false, error: error.message });
   }
 };
 
+// =======================================
+// LOGIN
+// =======================================
 export const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -59,7 +73,7 @@ export const loginUser = async (req, res) => {
         .json({ ok: false, message: "Contraseña incorrecta" });
     }
 
-    // Crear token
+    // Crear JWT
     const token = jwt.sign(
       {
         id: user._id,
@@ -71,7 +85,61 @@ export const loginUser = async (req, res) => {
       }
     );
 
-    return res.json({ ok: true, token });
+    return res.json({
+      ok: true,
+      token,
+      user: {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+      },
+    });
+  } catch (error) {
+    return res.status(500).json({ ok: false, error: error.message });
+  }
+};
+
+// =======================================
+// EDIT PROFILE — usa req.user.id del token
+// =======================================
+export const editProfile = async (req, res) => {
+  try {
+    const userId = req.user.id; // viene del token
+    const { newUsername, newEmail } = req.body;
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res
+        .status(404)
+        .json({ ok: false, message: "Usuario no encontrado" });
+    }
+
+    if (newUsername) user.username = newUsername;
+    if (newEmail) user.email = newEmail;
+
+    await user.save();
+
+    return res.json({ ok: true, message: "Perfil actualizado", user });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: error.message });
+  }
+};
+
+// =======================================
+// GET PROFILE — usa req.user.id del token
+// =======================================
+export const getMyProfile = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const user = await User.findById(userId).select("-password_hash");
+    if (!user) {
+      return res
+        .status(404)
+        .json({ ok: false, message: "Usuario no encontrado" });
+    }
+
+    return res.json({ ok: true, user });
   } catch (error) {
     res.status(500).json({ ok: false, error: error.message });
   }
