@@ -7,31 +7,35 @@ export const registerUser = async (req, res) => {
   try {
     const { username, email, password } = req.body;
 
-    // Validaciones simples
-    if (!username || !email || !password)
-      return res.status(400).json({ ok: false, error: "Faltan datos" });
-
-    // Verificar si ya existe
-    const existing = await User.findOne({ email });
-    if (existing)
+    // Verificar campos
+    if (!username || !email || !password) {
       return res
         .status(400)
-        .json({ ok: false, error: "El email ya está registrado" });
+        .json({ ok: false, message: "Todos los campos son obligatorios" });
+    }
+
+    // Usuario existente
+    const userExists = await User.findOne({ email });
+    if (userExists) {
+      return res
+        .status(409)
+        .json({ ok: false, message: "El usuario ya existe" });
+    }
 
     // Encriptar contraseña
-    const salt = await bcrypt.genSalt(10);
-    const password_hash = await bcrypt.hash(password, salt);
+    const salt = bcrypt.genSaltSync(10);
+    const password_hash = bcrypt.hashSync(password, salt);
 
     // Crear usuario
-    const user = await User.create({
+    const newUser = await User.create({
       username,
       email,
       password_hash,
     });
 
-    res.json({ ok: true, message: "Usuario registrado", user });
-  } catch (err) {
-    res.status(500).json({ ok: false, error: err.message });
+    return res.json({ ok: true, message: "Usuario creado", user: newUser });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: error.message });
   }
 };
 
@@ -39,38 +43,36 @@ export const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    if (!email || !password)
-      return res.status(400).json({ ok: false, error: "Faltan datos" });
-
+    // Verificar usuario
     const user = await User.findOne({ email });
-    if (!user)
+    if (!user) {
       return res
         .status(404)
-        .json({ ok: false, error: "Usuario no encontrado" });
+        .json({ ok: false, message: "Usuario no encontrado" });
+    }
 
     // Comparar contraseña
-    const isValid = await bcrypt.compare(password, user.password_hash);
-    if (!isValid)
+    const validPassword = bcrypt.compareSync(password, user.password_hash);
+    if (!validPassword) {
       return res
-        .status(400)
-        .json({ ok: false, error: "Contraseña incorrecta" });
+        .status(401)
+        .json({ ok: false, message: "Contraseña incorrecta" });
+    }
 
-    // Crear JWT
-    const token = jwt.sign({ user_id: user._id }, process.env.JWT_SECRET, {
-      expiresIn: process.env.JWT_EXPIRES || "7d",
-    });
-
-    res.json({
-      ok: true,
-      message: "Login exitoso",
-      token,
-      user: {
+    // Crear token
+    const token = jwt.sign(
+      {
         id: user._id,
         username: user.username,
-        email: user.email,
       },
-    });
-  } catch (err) {
-    res.status(500).json({ ok: false, error: err.message });
+      process.env.JWT_SECRET,
+      {
+        expiresIn: process.env.JWT_EXPIRES || "7d",
+      }
+    );
+
+    return res.json({ ok: true, token });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: error.message });
   }
 };
