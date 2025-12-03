@@ -1,0 +1,45 @@
+name: Deploy Auralis API
+
+on:
+  push:
+    branches: ["master"]   # o la rama que uses para prod
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Deploy to droplet
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.DROPLET_IP }}
+          username: ${{ secrets.DROPLET_USER }}
+          key: ${{ secrets.DROPLET_KEY }}
+          script: |
+            export PATH=$PATH:/usr/local/bin:/usr/bin
+
+            # 1. Ir al directorio del proyecto
+            cd /var/www/auralis
+
+            # 2. Actualizar código desde GitHub
+            git pull origin master
+
+            # 3. Instalar dependencias (solo prod)
+            npm install --production
+
+            # 4. Reiniciar / levantar con PM2 pasando las variables de entorno
+            pm2 delete auralis-api || true
+
+            PORT=${{ secrets.AURALIS_PORT }} \
+            MONGO_URI='${{ secrets.AURALIS_MONGO_URI }}' \
+            DB_NAME='${{ secrets.AURALIS_DB_NAME }}' \
+            JWT_SECRET='${{ secrets.AURALIS_JWT_SECRET }}' \
+            JWT_EXPIRES='${{ secrets.AURALIS_JWT_EXPIRES }}' \
+            OPENAI_API_KEY='${{ secrets.AURALIS_OPENAI_API_KEY }}' \
+            pm2 start app.js --name auralis-api
+
+            # 5. Guardar configuración de PM2
+            pm2 save
