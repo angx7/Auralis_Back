@@ -38,6 +38,8 @@ const SessionSchema = new mongoose.Schema(
 
     puntaje_total: { type: Number, required: true },
 
+    duration_seconds: { type: Number, required: true },
+
     deteccion_visual: { type: DeteccionVisualSchema, required: true },
 
     analisis_audio_opcional: { type: AnalisisAudioSchema },

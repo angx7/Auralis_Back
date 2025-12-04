@@ -2,6 +2,7 @@
 import { Router } from "express";
 import authRoutes from "./auth.js";
 import aiRoutes from "./ai.js";
+import sessionRoutes from "./session.js";
 
 const router = Router();
 
@@ -16,6 +17,6 @@ router.get("/", (req, res) => {
 // Rutas de autenticación
 router.use("/auth", authRoutes);
 router.use("/ai", aiRoutes);
-router.use("/seed", (await import("./seed.js")).default);
+router.use("/sessions", sessionRoutes);
 
 export default router;
