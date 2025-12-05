@@ -3,6 +3,7 @@ import { Router } from "express";
 import authRoutes from "./auth.js";
 import aiRoutes from "./ai.js";
 import sessionRoutes from "./session.js";
+import songRoutes from "./song.js";
 
 const router = Router();
 
@@ -18,5 +19,6 @@ router.get("/", (req, res) => {
 router.use("/auth", authRoutes);
 router.use("/ai", aiRoutes);
 router.use("/sessions", sessionRoutes);
+router.use("/songs", songRoutes); // Ruta para canciones
 
 export default router;

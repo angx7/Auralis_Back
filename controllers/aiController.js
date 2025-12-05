@@ -4,10 +4,7 @@ import { openai } from "../config/openai.js";
 export const getPianoTip = async (req, res) => {
   try {
     const response = await openai.chat.completions.create({
-      // model: "gpt-5-mini",
-      // model: "gpt-4o-mini",
       model: "gpt-4.1-mini",
-      // model: "gpt-5-nano",
       messages: [
         {
           role: "system",
