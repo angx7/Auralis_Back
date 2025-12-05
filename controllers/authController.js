@@ -36,9 +36,21 @@ export const registerUser = async (req, res) => {
       password_hash,
     });
 
+    const token = jwt.sign(
+      {
+        id: newUser._id,
+        username: newUser.username,
+      },
+      process.env.JWT_SECRET,
+      {
+        expiresIn: process.env.JWT_EXPIRES || "7d",
+      }
+    );
+
     return res.json({
       ok: true,
       message: "Usuario creado exitosamente",
+      token,
       user: {
         id: newUser._id,
         username: newUser.username,
@@ -119,7 +131,15 @@ export const editProfile = async (req, res) => {
 
     await user.save();
 
-    return res.json({ ok: true, message: "Perfil actualizado", user });
+    return res.json({
+      ok: true,
+      message: "Perfil actualizado",
+      user: {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+      },
+    });
   } catch (error) {
     res.status(500).json({ ok: false, error: error.message });
   }
@@ -139,7 +159,14 @@ export const getMyProfile = async (req, res) => {
         .json({ ok: false, message: "Usuario no encontrado" });
     }
 
-    return res.json({ ok: true, user });
+    return res.json({
+      ok: true,
+      user: {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+      },
+    });
   } catch (error) {
     res.status(500).json({ ok: false, error: error.message });
   }
