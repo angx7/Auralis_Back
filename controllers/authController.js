@@ -10,14 +10,13 @@ export const registerUser = async (req, res) => {
   try {
     const { username, email, password } = req.body;
 
-    // Validar campos
     if (!username || !email || !password) {
-      return res
-        .status(400)
-        .json({ ok: false, message: "Todos los campos son obligatorios" });
+      return res.status(400).json({
+        ok: false,
+        message: "Todos los campos son obligatorios",
+      });
     }
 
-    // Verificar si existe
     const userExists = await User.findOne({ email });
     if (userExists) {
       return res
@@ -25,51 +24,36 @@ export const registerUser = async (req, res) => {
         .json({ ok: false, message: "El usuario ya existe" });
     }
 
-    // Encriptar contraseña
-    const salt = bcrypt.genSaltSync(10);
-    const password_hash = bcrypt.hashSync(password, salt);
+    const password_hash = bcrypt.hashSync(password, 10);
 
-    // Crear usuario
     const newUser = await User.create({
       username,
       email,
       password_hash,
+      login_streak: 0,
+      last_connection: null,
+      last_streak_update: null,
     });
 
     const token = jwt.sign(
-      {
-        id: newUser._id,
-        username: newUser.username,
-      },
+      { id: newUser._id, username: newUser.username },
       process.env.JWT_SECRET,
-      {
-        expiresIn: process.env.JWT_EXPIRES || "7d",
-      }
+      { expiresIn: process.env.JWT_EXPIRES || "7d" }
     );
 
-    return res.json({
-      ok: true,
-      message: "Usuario creado exitosamente",
-      token,
-      user: {
-        id: newUser._id,
-        username: newUser.username,
-        email: newUser.email,
-      },
-    });
+    return res.json({ ok: true, token, user: newUser });
   } catch (error) {
     return res.status(500).json({ ok: false, error: error.message });
   }
 };
 
 // =======================================
-// LOGIN
+// LOGIN CON RACHAS
 // =======================================
 export const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Verificar usuario
     const user = await User.findOne({ email });
     if (!user) {
       return res
@@ -77,7 +61,6 @@ export const loginUser = async (req, res) => {
         .json({ ok: false, message: "Usuario no encontrado" });
     }
 
-    // Comparar contraseña
     const validPassword = bcrypt.compareSync(password, user.password_hash);
     if (!validPassword) {
       return res
@@ -85,21 +68,55 @@ export const loginUser = async (req, res) => {
         .json({ ok: false, message: "Contraseña incorrecta" });
     }
 
-    // Crear JWT
-    const token = jwt.sign(
-      {
-        id: user._id,
-        username: user.username,
-      },
-      process.env.JWT_SECRET,
-      {
-        expiresIn: process.env.JWT_EXPIRES || "7d",
+    // ======================
+    // LÓGICA DEL STREAK
+    // ======================
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    let lastUpdate = user.last_streak_update
+      ? new Date(user.last_streak_update)
+      : null;
+
+    if (lastUpdate) lastUpdate.setHours(0, 0, 0, 0);
+
+    if (!lastUpdate) {
+      // Primer login de la vida
+      user.login_streak = 1;
+      user.last_streak_update = today;
+    } else {
+      const diffDays =
+        (today.getTime() - lastUpdate.getTime()) / (1000 * 60 * 60 * 24);
+
+      if (diffDays === 0) {
+        // Ya se logueó hoy → no incrementamos
+      } else if (diffDays === 1) {
+        // Logueo consecutivo
+        user.login_streak += 1;
+        user.last_streak_update = today;
+      } else if (diffDays >= 2) {
+        // Perdió la racha
+        user.login_streak = 1;
+        user.last_streak_update = today;
       }
+    }
+
+    // Actualizar última conexión por separado
+    user.last_connection = new Date();
+
+    await user.save();
+
+    const token = jwt.sign(
+      { id: user._id, username: user.username },
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_EXPIRES || "7d" }
     );
 
     return res.json({
       ok: true,
       token,
+      streak: user.login_streak,
       user: {
         id: user._id,
         username: user.username,
@@ -112,11 +129,11 @@ export const loginUser = async (req, res) => {
 };
 
 // =======================================
-// EDIT PROFILE — usa req.user.id del token
+// EDIT PROFILE
 // =======================================
 export const editProfile = async (req, res) => {
   try {
-    const userId = req.user.id; // viene del token
+    const userId = req.user.id;
     const { newUsername, newEmail } = req.body;
 
     const user = await User.findById(userId);
@@ -133,7 +150,6 @@ export const editProfile = async (req, res) => {
 
     return res.json({
       ok: true,
-      message: "Perfil actualizado",
       user: {
         id: user._id,
         username: user.username,
@@ -141,18 +157,16 @@ export const editProfile = async (req, res) => {
       },
     });
   } catch (error) {
-    res.status(500).json({ ok: false, error: error.message });
+    return res.status(500).json({ ok: false, error: error.message });
   }
 };
 
 // =======================================
-// GET PROFILE — usa req.user.id del token
+// GET PROFILE
 // =======================================
 export const getMyProfile = async (req, res) => {
   try {
-    const userId = req.user.id;
-
-    const user = await User.findById(userId).select("-password_hash");
+    const user = await User.findById(req.user.id).select("-password_hash");
     if (!user) {
       return res
         .status(404)
@@ -161,13 +175,32 @@ export const getMyProfile = async (req, res) => {
 
     return res.json({
       ok: true,
-      user: {
-        id: user._id,
-        username: user.username,
-        email: user.email,
-      },
+      user,
     });
   } catch (error) {
-    res.status(500).json({ ok: false, error: error.message });
+    return res.status(500).json({ ok: false, error: error.message });
+  }
+};
+
+// =======================================
+// GET LOGIN STREAK
+// =======================================
+export const getLoginStreak = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+
+    if (!user) {
+      return res
+        .status(404)
+        .json({ ok: false, message: "Usuario no encontrado" });
+    }
+
+    return res.json({
+      ok: true,
+      streak: user.login_streak || 0,
+      last_update: user.last_streak_update,
+    });
+  } catch (error) {
+    return res.status(500).json({ ok: false, error: error.message });
   }
 };
