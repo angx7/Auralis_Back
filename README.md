@@ -147,8 +147,9 @@ La conexión a MongoDB se configura en `config/mongo.js` y utiliza Mongoose. Las
 ## 👤 Autores
 
 Desarrollado por
-**Angel Becerra (@angx7)**
-**Abraham Rodríguez (@bardodepacotilla2912)**
-**Christian Moreno (@Kuripipeer)**
-**Sergio Rosas (@SergioErnestoRosasDucoing)**
-**Héctor Adrian (@TachyonSlash)**
+- Angel Alejandro Becerra Rojas [@angx7](https://github.com/angx7)
+- Christian Axel Moreno Flores [@Kuripipeer](https://github.com/kuripipeer)
+- Abraham Rodríguez Contreras [@bardodepacotilla2912](https://github.com/bardodepacotilla2912)
+- Sergio Ernesto Rosas Ducoing [@SergioErnestoRosasDucoing](https://github.com/SergioErnestoRosasDucoing)
+- Héctor Javier Adrian Zaragoza [@TachyonSlash](https://github.com/TachyonSlash)
+
